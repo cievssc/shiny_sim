@@ -1,0 +1,52 @@
+ #app SIM (17-mar-23))
+ #atualizado em 07-jun-2023 (16:54h)
+ ui <-  tabler_page(dark = F,
+   header_tabler(logo = HTML('<img src="./images/cievs_png_red.png" width="232px" height="110" alt="Tabler" class="navbar-brand-image">'),
+               tags$link(rel = "stylesheet",type = 'text/css', href = './css/legenda_leaflet.css'),
+               tags$div( class =  "navbar-nav flex-row order-md-last", 
+                 tags$div(class = "nav-item d-none d-md-flex me-3",
+                     selectInput("head_municipio", label = "Município: ", 
+                       choices =  c('Todos', lapply(split(tab_regioes, tab_regioes$reg_saude), function(x){x[,'municipio']})),
+                       multiple = T, selected = 'Todos')
+                       ), #end dib
+                  tags$div(class = "nav-item d-none d-md-flex me-3",
+                     dateRangeInput('home_daterange',
+                                  label = h5('Período dos registros'),
+                                  start = Sys.Date() - 365, end = Sys.Date(),
+                                  separator = " - ", format = "dd/mm/yyyy",
+                                  language = 'pt-br'
+                                   )
+                       ), #end dib      
+                      tags$div(class = "nav-item d-none d-md-flex me-3",
+                      actionButton("head_atualizar", label = "Atualizar")
+                          ) #end div
+                          )), #endheader
+   tabler_navbar(
+     #brand_url = "https://preview-dev.tabler.io",
+     #brand_image = "https://preview-dev.tabler.io/static/logo.svg",
+     nav_menu = tabler_navbar_menu(
+       id = "current_tab",
+       tabler_navbar_menu_item(
+         text = "Informações gerais",
+         icon = icon_home(),
+         tabName = "home",
+         selected = TRUE
+       )
+     )#,
+     #tags$button("update", "Change tab", icon = icon("exchange-alt"))
+   ),
+   tabler_body(classe = 'page-wrapper',
+     tabler_tab_items(
+                      
+      source('./ui/home.R', , local = T, encoding = 'UTF-8')$value#,
+      #source('./ui/m_infantil.R', , local = T, encoding = 'UTF-8')$value  
+    
+       
+     ),
+     footer = tabler_footer(
+       left = "CIEVS/DIVE",
+       right = a(href = "https://www.google.com")
+     )
+   )
+  )
+                        
