@@ -7,7 +7,7 @@
  pops_2022$pop <- as.numeric(pops_2022$pop)
  #funão para obter coordenadas de endereço
  func_geo <- function(x, ...){
-                     key  <- 'AIzaSyD4AGBq0pVwUykSF_8wQ0W-1LX6QBozFM4' 
+                     key  <-
                      dadoi <- google_geocode(x, key = key) %>%
                               geocode_coordinates
                      dadoi[1,] 
