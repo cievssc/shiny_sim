@@ -5,7 +5,7 @@
    output$home_dropopcoes <- renderUI(
                                tagList(
                                   selectInput('home_tipo_obito', label = h5('Categoria óbito'),
-                                      choices = c('Todos','DCNT', 'Suicídio', 'Veículos terrestres'), selected = 'Todos' ,
+                                      choices = c('Todos','DCNT', 'Suicídio', 'Acidente V.terrestres', 'Afogamento'), selected = 'Todos' ,
                                       multiple = T),
                                   selectInput('home_tipo_sexo', label = h5('Sexo'),
                                       choices = c('Masculino', 'Feminino'), selected = c('Masculino', 'Feminino'),
@@ -17,11 +17,8 @@
                                        )      
                                      )
   
-  output$testei <- renderPrint({if(input$head_municipio != 'Todos'){
-                                dadoi <- municipios_br[which(municipios_br$uf == 'Santa Catarina'),c(3,4)]
-                                dadoi <- municipios_br$codigo[municipios_br$municipio %in% input$head_municipio]
-                                dadoi
-                }})
+  output$testei <- renderPrint({input$home_dropopcoes
+                })
   #organizando os dados
   dados_all     <- reactiveVal()
   dados_analise <- reactiveVal(0)
@@ -57,8 +54,9 @@
                    ))
                    NULL
                    }else{
-                   dadoi <- dadoi[dadoi$cod_uf_resid == '42',]
+                   dadoi <- dadoi[dadoi$cod_uf_resid == '42' ,]
                    dadoi <- func_sim(dadoi)
+                   dadoi <- dadoi[dadoi$cod_tipo_idade %in% c('4','5'),]
                    dadoi$cod_municipio_ibge_residencia %<>% as.numeric
                    dadoi$num_idade %<>% as.numeric
                    dadoi$dat_obito %<>% as.Date
@@ -82,7 +80,7 @@
                      if(input$home_tipo_obito == 'Suicídio'){
                         dadoi <- dadoi[dadoi$suicidio == T,]
                         }
-                     if(input$home_tipo_obito == 'Veículos terrestres'){
+                     if(input$home_tipo_obito == 'Acidente V.terrestres'){
                         dadoi <- dadoi[!is.na(dadoi$tipo_transito),]
                         }      
                      if((input$home_tipo_sexo == 'Masculino') & length(input$home_tipo_sexo) == 1){
@@ -90,9 +88,13 @@
                         }
                      if((input$home_tipo_sexo == 'Feminino')  & length(input$home_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'F',]
-                        }   
                         }
-                                      
+                     if(!is.null(input$home_tipo_idade)){
+                        sequencia <- seq(input$home_tipo_idade[1],input$home_tipo_idade[2], by = 1)
+                        dadoi <- dadoi[as.numeric(dadoi$num_idade) %in% sequencia, ] 
+                        }      
+                        }
+                   
                      
                     if(nrow(dadoi) == 0){
                   showModal(modalDialog(
@@ -264,15 +266,7 @@
                             ) #end 
   
   
-  mod_summary_card_server('home_sexo', 
-                   tagList(
-                     div(class = 'card',
-                       div(class = 'card-header',
-                           h1(class = 'card-title', 'Sexo')),
-                            div(class = 'body',
-                      apexchartOutput('home_sexo_chart', height = '250px')))
-                             ) #end taglist
-                             )
+
 
     output$long_serie_chart <- renderApex({
                            dadoi <- dados_analise()
@@ -463,9 +457,9 @@
                    tagList(
                      div(class = 'card',
                        div(class = 'card-header',
-                           h1(class = 'card-title', 'Sexo')),
+                           h1(class = 'card-title', 'Detalhamento tipo óbito')),
                             div(class = 'body',
-                      echartsOutput('home_grafsun', height = '250px')))
+                      echartsOutput('home_grafsun', height = '600px')))
                              ) #end taglist
                              )
  

@@ -3,7 +3,7 @@
   htmltools::htmlDependency(
     name = "echarts",
     version = "5.4.2",
-    src = c(href = "https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.2/dist/"),
+    src = c(href = "https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist"),
     script = "echarts.min.js"
   )}
  

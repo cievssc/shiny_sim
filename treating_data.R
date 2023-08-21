@@ -5,7 +5,7 @@
  pops_2022$codigo <- with(pops_2022, paste0(cod_uf, cod_mun)) %>% as.numeric
  pops_2022 <- dplyr::left_join(pops_2022, tab_regioes[,c(1,3)], by = 'codigo')
  pops_2022$pop <- as.numeric(pops_2022$pop)
- #funão para obter coordenadas de endereço
+ #funão para obter coordenadas de endereço (sem utiliudade no momento)
  func_geo <- function(x, ...){
                      key  <-
                      dadoi <- google_geocode(x, key = key) %>%
@@ -28,7 +28,8 @@
   
   func_sim <- function(x){
               dadoi <- x
-              dadoi$num_idade <- as.numeric(dadoi$num_idade)
+              dadoi$num_idade <- ifelse(as.numeric(dadoi$cod_tipo_idade) == 5, as.numeric(dadoi$num_idade) + 100, as.numeric(dadoi$num_idade))
+              
   dadoi$dcnt <- with(dadoi, ifelse(#(cod_tipo_idade == '4' & (num_idade >= 30 & num_idade <= 69)) &
                             (grepl('I',cod_cid_causa_basica) | 
                              grepl(paste(paste0('J',c(30:35,37:98)), collapse = '|'),cod_cid_causa_basica) |
