@@ -5,7 +5,8 @@
    output$home_dropopcoes <- renderUI(
                                tagList(
                                   selectInput('home_tipo_obito', label = h5('Categoria óbito'),
-                                      choices = c('Todos','DCNT', 'Suicídio', 'Acidente V.terrestres', 'Afogamento'), selected = 'Todos' ,
+                                      choices = c('Todos','Diabetes mellitus', 'Doenças cardiovasculares',
+                                      'Doenças respiratórias','Neoplasias', 'Suicídio', 'Acidente V.terrestres', 'Afogamento'), selected = 'Todos' ,
                                       multiple = T),
                                   selectInput('home_tipo_sexo', label = h5('Sexo'),
                                       choices = c('Masculino', 'Feminino'), selected = c('Masculino', 'Feminino'),
@@ -73,8 +74,9 @@
                      req(!is.null(dados_all()))
                      dadoi <- dados_all()
                      if(input$home_dropdown >0){
-                     if(input$home_tipo_obito == 'DCNT'){
-                        dadoi <- dadoi[dadoi$dcnt == T,]
+                     if(input$home_tipo_obito %in% c('Diabetes mellitus', 'Doenças cardiovasculares',
+                                      'Doenças respiratórias','Neoplasias')){
+                        dadoi <- dadoi[dadoi$tipodcnt %in% input$home_tipo_obito,]
                         }
                      if(input$home_tipo_obito == 'Suicídio'){
                         dadoi <- dadoi[dadoi$suicidio == T,]
@@ -410,9 +412,8 @@
  
  output$home_idadesexo_chart <- renderApex({
                           dadoi <- dados_analise()
-                          dadoi$faixa_idade <- ifelse(dadoi$cod_tipo_idade == '4', 
-                                                cut(dadoi$num_idade, breaks = c(-Inf,10,20,30,40,50,60,70,80, Inf), right = F, include.lowest = T,
-                                                labels = F), NA) %>% as.factor
+                          dadoi$faixa_idade <- cut(dadoi$num_idade, breaks = c(-Inf,10,20,30,40,50,60,70,80, Inf), right = F, include.lowest = T,
+                                                labels = F)
                           dadoi$faixa_idade <-  dplyr::recode_factor(dadoi$faixa_idade, 
                                                        `1` = '0-9',
                                                        `2` = '10-19',
@@ -468,17 +469,19 @@
                            acidente <- as.data.frame(table(dadoi$tipo_transito))
                            afogamento <- as.data.frame(table(dadoi$tipoafogamento))
                            dadoii <- dplyr::bind_rows(list(dcnt, acidente, afogamento))
+                           
+                           
                            dadoi <- list(list(
                                     name = 'DCNT',
-                                    children = lapply(1:nrow(dcnt), function(x){func_sunburst(x,y = dcnt)})
+                                    children = if(nrow(dcnt) == 0){0}else{lapply(1:nrow(dcnt), function(x){func_sunburst(x,y = dcnt)})}
                                         ),
                                         list(
                                     name = 'Acidente V.Terrestre',
-                                    children = lapply(1:nrow(acidente), function(x){func_sunburst(x,y = acidente)})    
+                                    children = if(nrow(acidente) == 0){0}else{lapply(1:nrow(acidente), function(x){func_sunburst(x,y = acidente)})    }
                                         ),      
                                         list(
                                     name = 'Afogamento',
-                                    children = lapply(1:nrow(afogamento), function(x){func_sunburst(x,y = afogamento)})    
+                                    children = if(nrow(afogamento) == 0){0}else{lapply(1:nrow(afogamento), function(x){func_sunburst(x,y = afogamento)})    }
                                         ) 
                                         )    
                            
