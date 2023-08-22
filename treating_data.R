@@ -28,7 +28,9 @@
   
   func_sim <- function(x){
               dadoi <- x
-              dadoi$num_idade <- ifelse(as.numeric(dadoi$cod_tipo_idade) == 5, as.numeric(dadoi$num_idade) + 100, as.numeric(dadoi$num_idade))
+              dadoi$num_idade <- ifelse(as.numeric(dadoi$cod_tipo_idade) == 5, as.numeric(dadoi$num_idade) + 100,
+                                 ifelse(!(dadoi$cod_tipo_idade %in% c('4','5')) | !is.na(dadoi$cod_tipo_idade), 0, 
+                                    as.numeric(dadoi$num_idade)))
               
   dadoi$dcnt <- with(dadoi, ifelse(#(cod_tipo_idade == '4' & (num_idade >= 30 & num_idade <= 69)) &
                             (grepl('I',cod_cid_causa_basica) | 

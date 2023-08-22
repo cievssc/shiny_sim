@@ -17,8 +17,8 @@
                                        )      
                                      )
   
-  output$testei <- renderPrint({input$home_dropopcoes
-                })
+  #output$testei <- renderPrint({input$home_dropdown
+   #             })
   #organizando os dados
   dados_all     <- reactiveVal()
   dados_analise <- reactiveVal(0)
@@ -56,9 +56,8 @@
                    }else{
                    dadoi <- dadoi[dadoi$cod_uf_resid == '42' ,]
                    dadoi <- func_sim(dadoi)
-                   dadoi <- dadoi[dadoi$cod_tipo_idade %in% c('4','5'),]
+                   dadoi <- dadoi[!is.na(dadoi$cod_tipo_idade),]
                    dadoi$cod_municipio_ibge_residencia %<>% as.numeric
-                   dadoi$num_idade %<>% as.numeric
                    dadoi$dat_obito %<>% as.Date
                    dadoi <- dplyr::arrange(dadoi, dat_obito)
                    dadoi$semana_epid <- with(dadoi, paste0(epiweek(dat_obito),'.',epiyear(dat_obito))) %>% factor(., levels = unique(.))
@@ -468,17 +467,18 @@
                            dcnt <- as.data.frame(table(dadoi$tipodcnt))
                            acidente <- as.data.frame(table(dadoi$tipo_transito))
                            afogamento <- as.data.frame(table(dadoi$tipoafogamento))
+                           dadoii <- dplyr::bind_rows(list(dcnt, acidente, afogamento))
                            dadoi <- list(list(
                                     name = 'DCNT',
-                                    chidren = lapply(1:nrow(dcnt), function(x){func_sunburst(x,y = dcnt)})
+                                    children = lapply(1:nrow(dcnt), function(x){func_sunburst(x,y = dcnt)})
                                         ),
                                         list(
                                     name = 'Acidente V.Terrestre',
-                                    chidren = lapply(1:nrow(acidente), function(x){func_sunburst(x,y = acidente)})    
+                                    children = lapply(1:nrow(acidente), function(x){func_sunburst(x,y = acidente)})    
                                         ),      
                                         list(
                                     name = 'Afogamento',
-                                    chidren = lapply(1:nrow(afogamento), function(x){func_sunburst(x,y = afogamento)})    
+                                    children = lapply(1:nrow(afogamento), function(x){func_sunburst(x,y = afogamento)})    
                                         ) 
                                         )    
                            
@@ -486,17 +486,27 @@
                            list(
                                 visualMap = list(
                                             type = 'continuous',
-                                            min = 0, 
-                                            max = 10,
+                                            min = min(dadoii[,2]), 
+                                            max = sum(dadoii[,2]),
                                             inRange = list(color = c('#2F93C8', '#AEC48F', '#FFDB5C', '#F98862')))         
                                          ,
                                 series = list(
                                          type = 'sunburst',
                                          data = dadoi,
                                          #radius = c(0, '90%'),
-                                         label = list(rotate = 'radial')
+                                         levels = list(list(),
+                                                    list(r0 = '10%',
+                                                         r1 = '40%',
+                                                         label = list(rotate = 'radial')
+                                                         ),
+                                                    list(r0 = '40%',
+                                                         r1 = '100%',
+                                                         label = list(position = 'outside',
+                                                                      padding = 3,
+                                                                      silent = FALSE))
+                                         
                                          )
-                                   )
+                                   ))
                                      })  #end renderecharts
   #==================================================
   #tabelas
