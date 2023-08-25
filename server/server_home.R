@@ -5,9 +5,9 @@
    output$home_dropopcoes <- renderUI(
                                tagList(
                                   selectInput('home_tipo_obito', label = h5('Categoria óbito'),
-                                      choices = c('Todos','Diabetes mellitus', 'Doenças cardiovasculares',
+                                      choices = c('Todos','Todos DCNT','Diabetes mellitus', 'Doenças cardiovasculares',
                                       'Doenças respiratórias','Neoplasias', 'Suicídio', 'Acidente V.terrestres', 'Afogamento'), selected = 'Todos' ,
-                                      multiple = T),
+                                      multiple = F),
                                   selectInput('home_tipo_sexo', label = h5('Sexo'),
                                       choices = c('Masculino', 'Feminino'), selected = c('Masculino', 'Feminino'),
                                       multiple = T),     
@@ -78,11 +78,17 @@
                                       'Doenças respiratórias','Neoplasias')){
                         dadoi <- dadoi[dadoi$tipodcnt %in% input$home_tipo_obito,]
                         }
+                     if(input$home_tipo_obito == 'Todos DCNT'){
+                        dadoi <- dadoi[dadoi$dcnt == T,]
+                        }
                      if(input$home_tipo_obito == 'Suicídio'){
                         dadoi <- dadoi[dadoi$suicidio == T,]
                         }
                      if(input$home_tipo_obito == 'Acidente V.terrestres'){
                         dadoi <- dadoi[!is.na(dadoi$tipo_transito),]
+                        }
+                     if(input$home_tipo_obito == 'Afogamento'){
+                        dadoi <- dadoi[dadoi$afogamento == T,]
                         }      
                      if((input$home_tipo_sexo == 'Masculino') & length(input$home_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'M',]
@@ -489,8 +495,8 @@
                            list(
                                 visualMap = list(
                                             type = 'continuous',
-                                            min = min(dadoii[,2]), 
-                                            max = sum(dadoii[,2]),
+                                            min = min(dadoii[,'Freq']), 
+                                            max = sum(dadoii[,'Freq']),
                                             inRange = list(color = c('#2F93C8', '#AEC48F', '#FFDB5C', '#F98862')))         
                                          ,
                                 series = list(
@@ -608,15 +614,51 @@
     }
   )
   
-  
-  
- output$teste <- renderApex({
-                list(
-                xAxis = list(type = 'category',
-                             data = letters[1:7]),
-                yAxis = list(type = 'value'),
-                series = list(data = c(150,230,224,218,135,147,260),
-                         type = 'line'
-                         )
-                )
-              })  
+ #capítulo cid
+  tabela_cap <- reactive({
+                            dadoi <- dados_analise()
+                            dadoi$CAT <- substr(dadoi$cod_cid_causa_basica,1,3)
+                            dadoi <- left_join(dadoi[which(dadoi$dsc_sexo != 'Ignorado'),], cid10, by = 'CAT')
+                            dadoi$ones <- 1
+                            dadoi <- aggregate(ones ~ cap_romano + descricao_cap + dsc_sexo, data = dadoi, FUN = sum)
+                            dadoi <- tidyr::spread(dadoi, key = dsc_sexo, value = ones)
+                            dadoi[is.na(dadoi)] <- 0
+                            if(length(input$home_tipo_sexo) != 1){
+                            dadoi$Total <- apply(dadoi[,3:4],1,sum)
+                            dadoi$`%_Total` <- with(dadoi, round(Total*100/sum(Total),2)) 
+                            dadoi <- dplyr::arrange(dadoi, desc('Total'))}
+                            names(dadoi)[1:2] <- c('Capítulo', 'Descrição') 
+                            row.names(dadoi)  <- NULL
+                            dadoi 
+                               })
+ 
+   mod_summary_card_server('home_tabela_cap',
+                      tags$div(class = 'card',
+                    tags$div(class = 'card-header',
+                    h1('Capítulo CID10')),
+                    tags$div(class = 'card-body',
+                    #tableOutput('home_tabelacid_out')
+                    reactableOutput('home_tabelacap_out')
+                    ),
+                    tags$div(class = 'card-footer',
+                       tags$div(class = "ms-auto lh-1",
+                          downloadButton('download_hometabela_cap', 'Baixar')      )       
+                             )) #end divs     
+                    )  
+                    
+  output$home_tabelacap_out <- renderReactable({  #DT::renderDataTable({#
+                           dadoi <- tabela_cap()
+                           reactable(dadoi)
+                           #kbl(dadoi) %>%
+                           #kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+                           #scroll_box(width = "100%", height = "480px")
+                            }) 
+ 
+ output$download_hometabela_cid <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(tabela_cap(), file)
+    }
+  )

@@ -25,7 +25,8 @@
                   mod_summary_card_ui('home_idade', div_class = 'col-md-4'),
                   mod_summary_card_ui('home_tabela_reg', div_class = 'col-md-5'),
                   mod_summary_card_ui('home_graf_classific', div_class = "col-md-7"),
-                  mod_summary_card_ui('home_tabela_cid', div_class = "col-md-12")
+                  mod_summary_card_ui('home_tabela_cid', div_class = "col-md-12"),
+                  mod_summary_card_ui('home_tabela_cap', div_class = "col-md-12")
                    
                   )#end row
        
