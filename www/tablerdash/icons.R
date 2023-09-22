@@ -733,3 +733,33 @@ icon_nutrients <- function(size = 24, class = "") {
     tags$path(d = "M11.5 10.5c-.667 1 -.667 2 0 3")
   )
 }
+
+
+icon_calc <- function(size = 24, class = "") {
+  class <- paste("icon icon-tabler icon-tabler-calculator", class)
+  tags$svg(
+    xmlns = "http://www.w3.org/2000/svg",
+    class = class,
+    width = "24",
+    height = "24",
+    viewbox = "0 0 24 24",
+    `stroke-width` = "2",
+    stroke = "currentColor",
+    fill = "none",
+    `stroke-linecap` = "round",
+    `stroke-linejoin` = "round",
+    tags$path(
+      stroke = "none",
+      d = "M0 0h24v24H0z",
+      fill = "none"
+    ),
+    tags$path(d = "M4 3m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"),
+    tags$path(d = "M8 7m0 1a1 1 0 0 1 1 -1h6a1 1 0 0 1 1 1v1a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1z"),
+    HTML('<path d="M8 14l0 .01"></path>
+   <path d="M12 14l0 .01"></path>
+   <path d="M16 14l0 .01"></path>
+   <path d="M8 17l0 .01"></path>
+   <path d="M12 17l0 .01"></path>
+   <path d="M16 17l0 .01"></path>')
+  )
+}
