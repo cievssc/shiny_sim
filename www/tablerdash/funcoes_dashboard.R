@@ -135,7 +135,12 @@ tabler_footer <- function(left = NULL, right = NULL) {
                         href = ".",
                         logo
                         )
-      ), ... ))      
+      ),
+    tags$script(
+      HTML(
+        "$( document ).ready(function() { $('.navbar-nav>li>a').on('click', function(){$('.navbar-collapse').collapse('hide');});});"
+      )
+    ), ... ))      
                            }
                            
                            
@@ -214,21 +219,17 @@ tabler_footer <- function(left = NULL, right = NULL) {
 
  tabler_navbar_menu <- function(..., inputId = NULL) {
   #tags$ul(id = inputId, class = "nav nav-pills navbar-nav", ...)
-  tags$ul(id = inputId, class = "nav navbar-nav shiny-tab-input", ...,
-    tags$script(
-      HTML(
-        "$( document ).ready(function() { $('.navbar-nav>li>a').on('click', function(){$('.navbar-collapse').collapse('hide');});});"
-      )
-    )
+  tags$ul(class = "nav navbar-nav shiny-tab-input shiny-bound-input", id = inputId, ...
   )
  }
  
  tabler_navbar_menu_item <- function(text, tabName, icon = NULL, selected = FALSE) {
 
   item_cl <- paste0("nav-link", if(selected) " active")
-
+  item_cl2 <- paste0("nav-item", if(selected) " active")
   tags$li(
-    class = "nav-item",
+    #class = "nav-item",
+    class = item_cl2,
     a(
       class = item_cl,
       `data-toggle` = "pill", # see https://getbootstrap.com/docs/4.0/components/navs/
