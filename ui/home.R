@@ -7,6 +7,7 @@
                           shinyWidgets::dropdown(style = "unite", icon = icon("gear"),  inputId = 'home_dropdown',
                                 uiOutput('home_dropopcoes'), left = T))),
        tags$div(class = 'page-body',
+        tags$div(class = 'container-xl',
                   verbatimTextOutput('testei'),
         fluidRow(class = 'row row-deck row-cards',
              #column(4,
@@ -29,7 +30,7 @@
                   mod_summary_card_ui('home_tabela_cap', div_class = "col-md-12")
                    
                   )#end row
-       
+       )
        #verbatimTextOutput('visual')
        ) #end div page-body
        ) #end tabler_tab_item

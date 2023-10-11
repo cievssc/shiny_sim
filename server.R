@@ -3,7 +3,7 @@
  shinyServer(function(input, output, session) {
     
     #----------------------------------------------------------------------
-    #mortalidade
+    #dados sim
     source('./server/server_home.R', local = T, encoding = 'UTF-8')
     
     
