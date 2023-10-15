@@ -11,12 +11,8 @@
                        multiple = T, selected = 'Todos')
                        ), #end dib
                   tags$div(class = "nav-item d-none d-md-flex me-3",
-                     dateRangeInput('home_daterange',
-                                  label = h5('Período dos registros'),
-                                  start = Sys.Date() - 365, end = Sys.Date(),
-                                  separator = " - ", format = "dd/mm/yyyy",
-                                  language = 'pt-br'
-                                   ) #códigtos em server_home
+                     uiOutput('home_dateinput')
+                      #códigtos em server_home
                      
                        ), #end dib      
                       tags$div(class = "nav-item d-none d-md-flex me-3",

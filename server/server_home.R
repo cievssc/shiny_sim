@@ -3,7 +3,24 @@
   #atualizado em 26-set-2023 (10:13h)
 
   #----------------------------------------------------------------------
-  
+  output$home_dateinput <- renderUI({
+            if(input$current_tab == 'home'){  dateRangeInput('home_daterange',
+                                  label = h5('Período dos registros'),
+                                  start = Sys.Date() - 365, end = Sys.Date(),
+                                  separator = " - ", format = "dd/mm/yyyy",
+                                  language = 'pt-br'
+                                   )
+             }else{
+               selectInput('home_dateyear',
+                           label = h5('Anos'),
+                           choices = c(2006:as.numeric(format(Sys.Date(), '%Y'))),
+                           selected = c((as.numeric(format(Sys.Date(), '%Y'))-2):as.numeric(format(Sys.Date(), '%Y'))),
+                           multiple = T
+                           ) 
+             }
+           
+
+  })
 
   #output$testei <- renderPrint({input$current_tab})
   
@@ -24,14 +41,21 @@
                                        )      
                                      )
   
-  #output$testei <- renderPrint({input$current_tab
-   #             })
+  output$testei <- renderPrint({input$current_tab
+                })
   #organizando os dados
   dados_all     <- reactiveVal()
   dados_analise <- reactiveVal(0)
   
+  #dados_all <- eventReactive(input$head_atualizar,{
   observeEvent(input$head_atualizar,{
-               #  if(input$current_tab != 'home'){return()}
+                 if(input$current_tab != 'home'){return()}
+                 #req(input$home_daterange)
+                 if(input$head_atualizar == 0){
+                  dias <- c(Sys.Date() - 365, Sys.Date())
+                 }else{
+                  dias <- input$home_daterange
+                 }
                  if(input$head_municipio != 'Todos'){
                                 lista_mun <- municipios_br[which(municipios_br$uf == 'Santa Catarina'),c(3,4)]
                                 lista_mun <- floor(municipios_br$codigo[municipios_br$municipio %in% input$head_municipio]/10)
@@ -40,15 +64,15 @@
                                     FROM fat_declaracao_obito_sim
                                    WHERE dat_obito >= ?code1 AND dat_obito <= ?code2 AND
                                    cod_municipio_ibge_residencia IN (\'",paste(lista_mun, collapse = "\',\'"),"\')"), 
-                                   code1 = input$home_daterange[1],
-                                   code2 = input$home_daterange[2]
+                                   code1 = dias[1],
+                                   code2 = dias[2]
                                    ) }else{              
                  query <- DBI::sqlInterpolate(conn(), 
                                    paste0("SELECT ",paste(lista_sim, collapse = ', ')," , substr(cod_municipio_ibge_residencia,1,2) AS 'cod_uf_resid'
                                     FROM fat_declaracao_obito_sim
                                    WHERE dat_obito >= ?code1 AND dat_obito <= ?code2"), 
-                                   code1 = input$home_daterange[1],
-                                   code2 = input$home_daterange[2]
+                                   code1 = dias[1],
+                                   code2 = dias[2]
                                    ) }
                  dadoi <- DBI::dbGetQuery(conn(), query)
                     
@@ -71,9 +95,8 @@
                    dadoi$semana_epid <- with(dadoi, paste0(epiweek(dat_obito),'.',epiyear(dat_obito))) %>% factor(., levels = unique(.))
                    dadoi <- left_join(dadoi, tab_regioes[,c(3:5)], by = c('cod_municipio_ibge_residencia' = 'cod6'))
                    dados_all(dadoi)}
-                   }, ignoreNULL = F)                            
-  
-  
+                   #dadoi}
+                   }, ignoreNULL = FALSE)
    
    
   
