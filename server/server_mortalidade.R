@@ -18,12 +18,60 @@
 
 
   #organizando os dados
-  dados_analise_mort <- reactiveVal(0)
+  dados_all_mort <- reactiveVal(0)
+  dados_analise_mort <- reactiveVal(NULL)
   
-   
+
+ observeEvent(input$head_atualizar,{
+                 if(input$current_tab != 'mortalidade'){return()}
+                 req(input$home_dateyear)
+                 
+                 if(input$head_municipio != 'Todos'){
+                                lista_mun <- municipios_br[which(municipios_br$uf == 'Santa Catarina'),c(3,4)]
+                                lista_mun <- floor(municipios_br$codigo[municipios_br$municipio %in% input$head_municipio]/10)
+                 query <- DBI::sqlInterpolate(conn(), 
+                                   paste0("SELECT ",paste(lista_sim, collapse = ', ')," , substr(cod_municipio_ibge_residencia,1,2) AS 'cod_uf_resid'
+                                   FROM fat_declaracao_obito_sim
+                                   WHERE cod_municipio_ibge_residencia IN (\'",paste(lista_mun, collapse = "\',\'"),"\') AND
+                                   num_ano_obito IN (?code1)
+                                   "),
+                                   code1 = paste(input$home_dateyear, collapse = "\',\'")
+                                   ) }else{              
+                 query <- DBI::sqlInterpolate(conn(), 
+                                   paste0("SELECT ",paste(lista_sim, collapse = ', ')," , substr(cod_municipio_ibge_residencia,1,2) AS 'cod_uf_resid'
+                                    FROM fat_declaracao_obito_sim
+                                   WHERE num_ano_obito IN (?code1)
+                                   "),
+                                   code1 <-  paste(input$home_dateyear, collapse = "\',\'")
+                                   ) }
+                 dadoi <- DBI::dbGetQuery(conn(), query)
+                    
+                  if(nrow(dadoi) == 0){
+                  showModal(modalDialog(
+                  title = NULL,
+                  tagList(
+                   p("Não há registros no período.")),
+                   easyClose = TRUE,
+                   footer = NULL
+                   ))
+                   NULL
+                   }else{
+                   dadoi <- dadoi[dadoi$cod_uf_resid == '42' ,]
+                   dadoi <- func_sim(dadoi)
+                   dadoi <- dadoi[!is.na(dadoi$cod_tipo_idade),]
+                   dadoi$cod_municipio_ibge_residencia %<>% as.numeric
+                   dadoi$dat_obito %<>% as.Date
+                   dadoi <- dplyr::arrange(dadoi, dat_obito)
+                   dadoi$semana_epid <- with(dadoi, paste0(epiweek(dat_obito),'.',epiyear(dat_obito))) %>% factor(., levels = unique(.))
+                   dadoi <- left_join(dadoi, tab_regioes[,c(3:5)], by = c('cod_municipio_ibge_residencia' = 'cod6'))
+                   dados_all_mort(dadoi)}
+                   #dadoi}
+                   }, ignoreNULL = FALSE) #end observeEvent
+  
+
   observeEvent(c( input$head_atualizar),{# input$mort_atualizar,
-                     req(!is.null(dados_all()))
-                     dadoi <- dados_all()
+                     req(!is.null(dados_all_mort()))
+                     dadoi <- dados_all_mort()
                      if(input$mort_dropdown >0){
                      if(input$mort_tipo_obito %in% c('Diabetes mellitus', 'Doenças cardiovasculares',
                                       'Doenças respiratórias','Neoplasias')){
@@ -64,10 +112,14 @@
                    ))
                    NULL
                    }else{
+
                    dados_analise_mort(dadoi)
                    }     
                           })
   
+         
+
+
   #séries temporais dos dados                      
   #serie_falta <- reactive({
    #              dadoi <- dados_analise_mort() 
