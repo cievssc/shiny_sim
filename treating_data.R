@@ -1,5 +1,6 @@
  #cod6 para o mapa
  municipiopoly$cod6 <- floor(as.numeric(municipiopoly$CD_GEOCMU)/10)
+ municipiosf$cod6 <- floor(as.numeric(municipiosf$CD_GEOCMU)/10)
  
  #codigo municipio formatado
  pops_2022$codigo <- with(pops_2022, paste0(cod_uf, cod_mun)) %>% as.numeric

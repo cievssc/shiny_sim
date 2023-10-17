@@ -46,6 +46,7 @@
  load('mapa_regionais.RData')
  load('pops_2022.RData')
  load('serie_pop.RData')
+ load('municipiosf.RData')
  
  
  source('./treating_data.R', local = T, encoding = 'UTF-8')
