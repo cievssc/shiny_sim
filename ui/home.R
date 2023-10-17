@@ -8,7 +8,6 @@
                                 uiOutput('home_dropopcoes'), left = T))),
        tags$div(class = 'page-body',
         tags$div(class = 'container-xl',
-                  verbatimTextOutput('testei'),
         fluidRow(class = 'row row-deck row-cards',
              #column(4,
               # fluidRow(class = 'row row-deck row-cards',

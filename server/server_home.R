@@ -41,8 +41,7 @@
                                        )      
                                      )
   
-  output$testei <- renderPrint({input$current_tab
-                })
+ 
   #organizando os dados
   dados_all     <- reactiveVal()
   dados_analise <- reactiveVal(0)

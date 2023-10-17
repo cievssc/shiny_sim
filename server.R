@@ -6,6 +6,8 @@
     #dados sim
     source('./server/server_home.R', local = T, encoding = 'UTF-8')
     
+    #mortalidade
+    source('./server/server_mortalidade.R', local = T, encoding = 'UTF-8')
     
  
  }) #end server function

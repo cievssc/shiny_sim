@@ -18,14 +18,19 @@
 
 
   #organizando os dados
-  dados_all_mort <- reactiveVal(0)
+  dados_all_mort <- reactiveVal(NULL)
   dados_analise_mort <- reactiveVal(NULL)
+  pops <- reactiveVal()
   
+  teste <- reactive({list(input$current_tab == 'mortalidade', input$head_atualizar)})
 
- observeEvent(input$head_atualizar,{
-                 if(input$current_tab != 'mortalidade'){return()}
-                 req(input$home_dateyear)
-                 
+  observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{ #teste(),{ #
+                 #if(input$current_tab != 'mortalidade'){return()}
+                 # req(input$home_dateyear)
+                 if(is.null(input$home_dateyear)){
+                  anos <- c((as.numeric(format(Sys.Date(), '%Y'))-2):(as.numeric(format(Sys.Date(), '%Y'))))
+                 }else{anos <- input$home_dateyear}
+
                  if(input$head_municipio != 'Todos'){
                                 lista_mun <- municipios_br[which(municipios_br$uf == 'Santa Catarina'),c(3,4)]
                                 lista_mun <- floor(municipios_br$codigo[municipios_br$municipio %in% input$head_municipio]/10)
@@ -33,16 +38,16 @@
                                    paste0("SELECT ",paste(lista_sim, collapse = ', ')," , substr(cod_municipio_ibge_residencia,1,2) AS 'cod_uf_resid'
                                    FROM fat_declaracao_obito_sim
                                    WHERE cod_municipio_ibge_residencia IN (\'",paste(lista_mun, collapse = "\',\'"),"\') AND
-                                   num_ano_obito IN (?code1)
+                                   num_ano_obito IN ( ?code1 )
                                    "),
-                                   code1 = paste(input$home_dateyear, collapse = "\',\'")
+                                   code1 =  SQL(toString(sprintf("'%s'",  anos)))
                                    ) }else{              
                  query <- DBI::sqlInterpolate(conn(), 
                                    paste0("SELECT ",paste(lista_sim, collapse = ', ')," , substr(cod_municipio_ibge_residencia,1,2) AS 'cod_uf_resid'
                                     FROM fat_declaracao_obito_sim
                                    WHERE num_ano_obito IN (?code1)
                                    "),
-                                   code1 <-  paste(input$home_dateyear, collapse = "\',\'")
+                                   code1 =  SQL(toString(sprintf("'%s'",  anos)))
                                    ) }
                  dadoi <- DBI::dbGetQuery(conn(), query)
                     
@@ -66,7 +71,7 @@
                    dadoi <- left_join(dadoi, tab_regioes[,c(3:5)], by = c('cod_municipio_ibge_residencia' = 'cod6'))
                    dados_all_mort(dadoi)}
                    #dadoi}
-                   }, ignoreNULL = FALSE) #end observeEvent
+                   }, ignoreNULL = F) #end observeEvent ignoreNULL = F
   
 
   observeEvent(c( input$head_atualizar),{# input$mort_atualizar,
@@ -117,551 +122,17 @@
                    }     
                           })
   
-         
+  #população (add em 16-out-2023, 1525h)
 
-
-  #séries temporais dos dados                      
-  #serie_falta <- reactive({
-   #              dadoi <- dados_analise_mort() 
-    #             dadoi$mes_ano <- with(dadoi,factor(mes_ano, levels = unique(mes_ano[order(falta_7)])))
-     #             serie <- with(dadoi,as.data.frame(table(mes_ano))  )
-      #            serie
-       #                 })   
-  
-  
-  
-  #========================================================================                      
-  #cards
-  
-  #card total 
-  mod_summary_card_server('mort_total', 
-                            card_large(heading =  'Total de registros no período',
-                              uiOutput('mort_total_card') %>% withSpinner(color="#0dc5c1")
-                             )
-                          )
-  
-  output$mort_total_card <- renderUI({
-                    dadoi <- dados_analise_mort()
-                    dadoi <- nrow(dadoi)
-                    tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
-                    )
-                    })
-                    
-                    
-  #card dcnt
-  mod_summary_card_server('mort_total_dcnt', 
-                            card_large(heading =  'DCNT´s',
-                              uiOutput('mort_totalcard_dcnt')%>% withSpinner(color="#0dc5c1")
-                             )
-                          )
-  
-  output$mort_totalcard_dcnt <- renderUI({
-                    dadoi <- dados_analise_mort()
-                    dadoi <- paste0(sum(dadoi$dcnt, na.rm = T),'/',round((sum(dadoi$dcnt, na.rm = T)*100/nrow(dadoi)),2),'%')
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
-                    )
-                    })
-  
-  #card suicídio
-  mod_summary_card_server('mort_total_suic', 
-                            card_large(heading =  'Suicídio',
-                              uiOutput('mort_totalcard_suic')%>% withSpinner(color="#0dc5c1")
-                             )
-                          )
-  
-  output$mort_totalcard_suic <- renderUI({
-                    dadoi <- dados_analise_mort()
-                    dadoi <- paste0(sum(dadoi$suicidio, na.rm = T),'/',round((sum(dadoi$suicidio, na.rm = T)*100/nrow(dadoi)),2),'%')
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
-                    #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
-                    )
-                    })
- 
- #veiculo terrestre
-  mod_summary_card_server('mort_total_acid', 
-                            card_large(heading =  'Acidente com veículos terrestres',
-                              uiOutput('mort_totalcard_acid')%>% withSpinner(color="#0dc5c1")
-                             )
-                          )
-  
-  output$mort_totalcard_acid <- renderUI({
-                    dadoi <- dados_analise_mort()
-                    dadoi <- paste0(sum(!is.na(dadoi$tipo_transito)),'/',round((sum(!is.na(dadoi$tipo_transito))*100/nrow(dadoi)),2),'%')
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
-                    #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
-                    )
-                    })
- 
- #afogamento (add 20-jun-2023, 21:48h)
-  mod_summary_card_server('mort_total_afog', 
-                            card_large(heading =  'Afogamentos',
-                              uiOutput('mort_totalcard_afog')%>% withSpinner(color="#0dc5c1")
-                             )
-                          )
-  
-  output$mort_totalcard_afog <- renderUI({
-                    dadoi <- dados_analise_mort()
-                    dadoi <- paste0(sum(dadoi$afogamento, na.rm = T),'/',round((sum(dadoi$afogamento, na.rm = T)*100/nrow(dadoi)),2),'%')
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
-                    #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
-                    )
-                    }) 
-  #============================================================================
-  #mapa
-  mod_summary_card_server('mort_mapa', 
-                   card_large(heading = tagList(h1('Mapa')),
-                      leafletOutput('mort_mapa_leaflet') %>% withSpinner(color="#0dc5c1"))
-                             )
-                             
-                             
-  output$mort_mapa_leaflet <- renderLeaflet({ mort_leaflet_data()
-        })
-        
-  mort_leaflet_data <- reactive({
-  
-   dadoi <- dados_analise_mort()
-   
-   mapa_dado <- as.data.frame(table(dadoi$reg_saude))     
-   mapa_dado <- left_join(mapa_regionais, mapa_dado, by = c('reg_saude' = 'Var1'))
-   
-   fill_color <- function(x){
-                   bins <- unique(as.vector(round(quantile(x, probs = c(0,0.30,0.50,0.7,0.85,0.95,0.98,1),na.rm = T))))
-                   pal <- colorBin("YlOrRd", domain = x, bins = bins)
-                   colorData <- pal(x)
-                   list(pal, colorData)
-                          }
-   
-   labells <- function(x){
-             mapa_dado <- x
-     sprintf(
-  "<strong>%s</strong><br/> %s %s" , #  people / mi<sup>2</sup>",
- mapa_dado$reg_saude, 'Qtde óbitos: ', mapa_dado$Freq) %>% lapply(htmltools::HTML)
-         }
-
-   leaflet() %>%
-        addProviderTiles("OpenStreetMap.Mapnik") %>%
-        setView(lat = -27.5, lng = -51, zoom = 7)  %>% clearControls() %>% clearShapes() %>%
-        addPolygons(data = mapa_dado,  color = "#444444", fillColor =  fill_color(mapa_dado$Freq)[[2]], 
-        stroke = T, smoothFactor = 0.5, fillOpacity = 0.8, weight = 1.5,
-    highlight = highlightOptions(
-    weight = 5,
-    color = "#666",
-    fillOpacity = 0.7,
-    bringToFront = TRUE),
-  label = labells(mapa_dado),
-  labelOptions = labelOptions(
-    style = list("font-weight" = "normal", padding = "3px 8px"),
-    textsize = "12px",
-    maxWidth = '200px',
-    direction = "auto")) %>% 
-    addLegend(pal = fill_color(mapa_dado$Freq)[[1]], values = fill_color(mapa_dado$Freq)[[2]], opacity = 0.7, title = 'Qtde. de Óbitos',
-  position = "bottomright", layerId="colorLegend2",className = 'info legenda')
-                      
-  }) #reactive                       
-  
-                        
- #============================================================================
- #gráficos
- #card serie óbitos
-  mod_summary_card_server('mort_serie', 
-                            tagList(
-                     div(class = 'card',
-                       div(class = 'card-header', style = 'display:flex;   justify-content:space-between;',
-                           h1(class = 'card-title', 'Série óbito'), 
-                           selectInput('mort_tipograf1', label = NULL, choices = c('Semana Epidemiológica' = 1, 'Mensal' = 2),
-                           selected = 1, multiple = F)),
-                            div(class = 'body',
-                      apexchartOutput('long_serie_chart', height = '500px') %>% withSpinner(color="#0dc5c1")))
-                             ) #end taglist
-                            ) #end 
-  
+  observeEvent(list(input$head_atualizar, input$home_dateyear),{
+      if(input$current_tab != 'mortalidade'){return()}
+      pops <- pop_all[pop_all$ano %in% as.numeric(input$home_dateyear),-2]
+      pops(pops)
+  }, ignoreNULL = F)
   
 
-
-    output$long_serie_chart <- renderApex({
-                           dadoi <- dados_analise_mort()
-                           if(input$mort_tipograf1 == 1){
-                           dadoi <- as.data.frame(table(dadoi$semana_epid))
-                           dadoi[dadoi == 0] <-NA 
-                           
-                       list(series = list(list(name = 'Óbitos',data = dadoi[,2])
-                                              ),
-                                              chart = list(type = 'bar', 
-                                                       toolbar = c(show = TRUE),
-                                                       height = '100%',
-                                                       stacked = TRUE),
-                                              dataLabels = list(enabled = FALSE),
-                                              xaxis = list(
-                                                      categories = dadoi$Var1
-                                                      ),
-                                            
-                                              plotOptions = list(
-                                                        bar = list(
-                                                          horizontal = FALSE,
-                                                          dataLabels = list(
-                                                             total = list(
-                                                                enabled = F,
-                                                                style = list(
-                                                                    fontSize = '13px',
-                                                                    fontWeight = 900)
-                                                                )
-                                                             )
-                                                          )
-                                                          ),
-                                              legend = c(show = TRUE)
-                                              )} else {
-                           dadoi$ano <- with(dadoi, substr(dat_obito,1,4)) %>% as.numeric
-                           dadoi$mes <- with(dadoi, substr(dat_obito,6,7)) %>% as.numeric
-                           dadoi <- with(dadoi, as.data.frame(table(mes, ano)))
-                           levels(dadoi$mes) <- c('jan', 'fev', 'mar', 'abr','maio', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez')
-                           serie <- lapply(split(dadoi, dadoi$ano), function(x){
-                                           list(name = x$ano[1],
-                                           data = x$Freq)
-                                                        }) %>% unname
-                          
-                       list(series = serie,
-                                              chart = list(type = 'bar', 
-                                                       toolbar = c(show = TRUE),
-                                                       height = '100%'),
-                                              dataLabels = list(enabled = FALSE),
-                                              xaxis = list(
-                                                      categories = levels(dadoi$mes )
-                                                      ),
-                                            
-                                              plotOptions = list(
-                                                        bar = list(
-                                                          horizontal = FALSE,
-                                                          endingShape = 'rounded'
-                                                          )
-                                                          ),
-                                              dataLabels = list(
-                                                             enabled = F),
-                                              legend = c(show = TRUE)
-                                              )  
-                                              }
-                                     })  #end renderapex                       
-                        
  
- #sexo ----------------------------
- mod_summary_card_server('mort_sexo', 
-                   tagList(
-                     div(class = 'card',
-                       div(class = 'card-header',
-                           h1(class = 'card-title', 'Sexo')),
-                            div(class = 'body',
-                      apexchartOutput('mort_sexo_chart', height = '250px')))
-                             ) #end taglist
-                             )
- 
- output$mort_sexo_chart <- renderApex({
-                           dadoi  <- dados_analise_mort()
-                           dadoi$dsc_sexo <- factor(dadoi$dsc_sexo, levels = c('Masculino','Feminino',  'Ignorado'))
-                           dadoi <-  as.data.frame(table(dadoi$dsc_sexo))
-
-                           list(series = c(dadoi[,2]),
-                            chart = list(type = 'donut',
-                                         height = '100%'),
-                            labels = dadoi[,1],
-                            legend = list(position = 'bottom'))
-                             
-                                     })  #end renderapex 
-                                     
-                                     
- #sexo escolaridade
- mod_summary_card_server('mort_escolaridade', 
-                   tagList(
-                     div(class = 'card',
-                       div(class = 'card-header',
-                           h1(class = 'card-title', 'Escolaridade')),
-                            div(class = 'body',
-                      apexchartbarOutput('mort_escola_chart', height = '250px')))
-                             ) #end taglist
-                             )
- 
- output$mort_escola_chart <- renderApex({
-                           dadoi <- dados_analise_mort()
-                           dadoi$dsc_escolaridade <- factor(dadoi$dsc_tipo_escolaridade, levels = c('Ignorado', 'Nenhuma', 
-                                                     'de 1 a 3', 'de 4 a 7', 'de 8 a 11', '12 e mais'))
-                           dadoi <- with(dadoi,as.data.frame(table(dsc_tipo_escolaridade, dsc_sexo)))
-                           
-                           dadoi <- tidyr::spread(dadoi, value = Freq, key = dsc_sexo)
-                           if(ncol(dadoi) == 2){lista <- list(list(name = input$mort_tipo_sexo[1], data = dadoi[,2]))}else{
-                           lista <- list(list(name = 'Homem',data = dadoi[,'Masculino']*(-1)),
-                                          list(name = 'Mulher',data = dadoi[,'Feminino']))}
-                                          
-                           list(series = lista,
-                                              chart = list(type = 'bar', 
-                                                       #toolbar = c(show = FALSE),
-                                                       height = '100%',
-                                                       stacked = T),
-                                              #colors = c('#008FFB', '#FF4560'),
-                                              dataLabels = c(enabled = FALSE),
-                                              plotOptions = list(bar = list(horizontal = T,
-                                                                       barheight = '80%')),
-                                              xaxis = list(#labels = c(show = FALSE),
-                                                      categories =dadoi[,1]
-                                                      ),
-                                              
-                                              grid = list(
-                                                          xaxis = list(lines = c(show = FALSE))),
-                                              legend = c(show = T)
-                                              )
-                                     })  #end renderapex 
-                                     
- #pirâmide etária
- mod_summary_card_server('mort_idade', 
-                   tagList(
-                     div(class = 'card',
-                       div(class = 'card-header',
-                           h1(class = 'card-title', 'Idade')),
-                            div(class = 'body',
-                      apexchartbarOutput('mort_idadesexo_chart', height = '250px')))
-                             ) #end taglist
-                             )
- 
- output$mort_idadesexo_chart <- renderApex({
-                          dadoi <- dados_analise_mort()
-                          dadoi$faixa_idade <- cut(dadoi$num_idade, breaks = c(-Inf,10,20,30,40,50,60,70,80, Inf), right = F, include.lowest = T,
-                                                labels = F)
-                          dadoi$faixa_idade <-  dplyr::recode_factor(dadoi$faixa_idade, 
-                                                       `1` = '0-9',
-                                                       `2` = '10-19',
-                                                       `3` = '20-29',
-                                                       `4` = '30-39',
-                                                       `5` = '40-49',
-                                                       `6` = '50-59',
-                                                       `7` = '60-69',
-                                                       `8` = '70-79',
-                                                       `9` = '+80')
-                          
-                          
-                          dadoi <- with(dadoi,as.data.frame(table(faixa_idade, dsc_sexo)))
-                           
-                           dadoi <- tidyr::spread(dadoi, value = Freq, key = dsc_sexo)
-                           if(ncol(dadoi) == 2){lista <- list(list(name = input$mort_tipo_sexo[1], data = dadoi[,2]))}else{
-                           lista <- list(list(name = 'Homem',data = dadoi[,'Masculino']*(-1)),
-                                          list(name = 'Mulher',data = dadoi[,'Feminino']))}
-                                          
-                           list(series = lista,
-                                              chart = list(type = 'bar', 
-                                                       #toolbar = c(show = FALSE),
-                                                       height = '100%',
-                                                       stacked = T),
-                                              #colors = c('#008FFB', '#FF4560'),
-                                              dataLabels = c(enabled = FALSE),
-                                              plotOptions = list(bar = list(horizontal = T,
-                                                                       barheight = '80%')),
-                                              xaxis = list(#labels = c(show = FALSE),
-                                                      categories =dadoi[,1]
-                                                      ),
-                                              
-                                              grid = list(
-                                                          xaxis = list(lines = c(show = FALSE))),
-                                              legend = c(show = T)
-                                              )
-                                     })  #end renderapex                            
-
- #sunburst (20-jun-2023, 16:25h)----------------------------
- mod_summary_card_server('mort_graf_classific', 
-                   tagList(
-                     div(class = 'card',
-                       div(class = 'card-header',
-                           h1(class = 'card-title', 'Detalhamento tipo óbito')),
-                            div(class = 'body',
-                      echartsOutput('mort_grafsun', height = '600px')))
-                             ) #end taglist
-                             )
- 
- output$mort_grafsun <- renderEcharts({
-                           dadoi  <- dados_analise_mort()
-                           dcnt <- as.data.frame(table(dadoi$tipodcnt))
-                           acidente <- as.data.frame(table(dadoi$tipo_transito))
-                           afogamento <- as.data.frame(table(dadoi$tipoafogamento))
-                           dadoii <- dplyr::bind_rows(list(dcnt, acidente, afogamento))
-                           
-                           
-                           dadoi <- list(list(
-                                    name = 'DCNT',
-                                    children = if(nrow(dcnt) == 0){0}else{lapply(1:nrow(dcnt), function(x){func_sunburst(x,y = dcnt)})}
-                                        ),
-                                        list(
-                                    name = 'Acidente V.Terrestre',
-                                    children = if(nrow(acidente) == 0){0}else{lapply(1:nrow(acidente), function(x){func_sunburst(x,y = acidente)})    }
-                                        ),      
-                                        list(
-                                    name = 'Afogamento',
-                                    children = if(nrow(afogamento) == 0){0}else{lapply(1:nrow(afogamento), function(x){func_sunburst(x,y = afogamento)})    }
-                                        ) 
-                                        )    
-                           
-
-                           list(
-                                visualMap = list(
-                                            type = 'continuous',
-                                            min = min(dadoii[,'Freq']), 
-                                            max = sum(dadoii[,'Freq']),
-                                            inRange = list(color = c('#2F93C8', '#AEC48F', '#FFDB5C', '#F98862')))         
-                                         ,
-                                series = list(
-                                         type = 'sunburst',
-                                         data = dadoi,
-                                         #radius = c(0, '90%'),
-                                         levels = list(list(),
-                                                    list(r0 = '10%',
-                                                         r1 = '40%',
-                                                         label = list(rotate = 'radial')
-                                                         ),
-                                                    list(r0 = '40%',
-                                                         r1 = '100%',
-                                                         label = list(position = 'outside',
-                                                                      padding = 3,
-                                                                      silent = FALSE))
-                                         
-                                         )
-                                   ))
-                                     })  #end renderecharts
-  #==================================================
-  #tabelas
-  #região saúde
-  tabela_reg_saude <- reactive({
-                            dadoi <- dados_analise_mort()
-                            dadoi <- with(dadoi,as.data.frame(table(reg_saude)))#, stringsAsFactors = F))
-                            dadoi$Perc_registros <- with(dadoi, round(Freq*100/sum(Freq),2))
-                            pops <- aggregate(pop ~reg_saude, data = pops_2022, FUN = sum,stringsAsFactors = F)
-                            pops$Perc_populacao <- with(pops, round(pop*100/sum(pop),2))
-                            dadoi <- dplyr::left_join(dadoi, pops[,-2], by = 'reg_saude')
-                            names(dadoi)[1:2] <- c('Região', 'Registros')
-                            dadoi <- dplyr::arrange(dadoi, desc('Registros')) 
-                            row.names(dadoi)  <- NULL
-                            dadoi 
-                               })
- 
-   mod_summary_card_server('mort_tabela_reg',
-                      tags$div(class = 'card',
-                    tags$div(class = 'card-header',
-                    h1('Região Saúde')),
-                    tags$div(class = 'card-body',
-                    #tableOutput('mort_tabelaregsaude_out')
-                    reactableOutput('mort_tabelaregsaude_out')
-                    ),
-                    tags$div(class = 'card-footer',
-                       tags$div(class = "ms-auto lh-1",
-                          downloadButton('download_hometabela_reg', 'Baixar')      )       
-                             )) #end divs     
-                    )  
-                    
-  output$mort_tabelaregsaude_out <- renderReactable({  #DT::renderDataTable({#
-                           dadoi <- tabela_reg_saude()
-                           dadoi <- dplyr::arrange(dadoi, desc(Registros))   
-                           reactable(dadoi)
-                           #kbl(dadoi) %>%
-                           #kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
-                           #scroll_box(width = "100%", height = "480px")
-                            }) 
- 
- output$download_hometabela_reg <- downloadHandler(
-    filename = function() {
-      paste("data-", Sys.Date(), ".csv", sep="")
-    },
-    content = function(file) {
-      write.csv(tabela_reg_saude(), file)
-    }
-  )
+  output$testei <- renderPrint({ head(dados_analise_mort())
+                                   })
   
   
-  #cid causa principal
-  tabela_cid <- reactive({
-                            dadoi <- dados_analise_mort()
-                            dadoi$CAT <- substr(dadoi$cod_cid_causa_basica,1,3)
-                            dadoi <- left_join(dadoi[which(dadoi$dsc_sexo != 'Ignorado'),], cid10, by = 'CAT')
-                            dadoi$ones <- 1
-                            dadoi <- aggregate(ones ~ CAT + DESCRICAO + dsc_sexo, data = dadoi, FUN = sum)
-                            dadoi <- tidyr::spread(dadoi, key = dsc_sexo, value = ones)
-                            dadoi[is.na(dadoi)] <- 0
-                            if(length(input$mort_tipo_sexo) != 1){
-                            dadoi$Total <- apply(dadoi[,3:4],1,sum)
-                            dadoi <- dplyr::arrange(dadoi, desc('Total'))}
-                            names(dadoi)[1:2] <- c('CID10', 'Descrição') 
-                            row.names(dadoi)  <- NULL
-                            dadoi 
-                               })
- 
-   mod_summary_card_server('mort_tabela_cid',
-                      tags$div(class = 'card',
-                    tags$div(class = 'card-header',
-                    h1('Causa Principal')),
-                    tags$div(class = 'card-body',
-                    #tableOutput('mort_tabelacid_out')
-                    reactableOutput('mort_tabelacid_out')
-                    ),
-                    tags$div(class = 'card-footer',
-                       tags$div(class = "ms-auto lh-1",
-                          downloadButton('download_hometabela_cid', 'Baixar')      )       
-                             )) #end divs     
-                    )  
-                    
-  output$mort_tabelacid_out <- renderReactable({  #DT::renderDataTable({#
-                           dadoi <- tabela_cid()
-                           reactable(dadoi)
-                           #kbl(dadoi) %>%
-                           #kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
-                           #scroll_box(width = "100%", height = "480px")
-                            }) 
- 
- output$download_hometabela_cid <- downloadHandler(
-    filename = function() {
-      paste("data-", Sys.Date(), ".csv", sep="")
-    },
-    content = function(file) {
-      write.csv(tabela_cid(), file)
-    }
-  )
-  
- #capítulo cid
-  tabela_cap <- reactive({
-                            dadoi <- dados_analise_mort()
-                            dadoi$CAT <- substr(dadoi$cod_cid_causa_basica,1,3)
-                            dadoi <- left_join(dadoi[which(dadoi$dsc_sexo != 'Ignorado'),], cid10, by = 'CAT')
-                            dadoi$ones <- 1
-                            dadoi <- aggregate(ones ~ cap_romano + descricao_cap + dsc_sexo, data = dadoi, FUN = sum)
-                            dadoi <- tidyr::spread(dadoi, key = dsc_sexo, value = ones)
-                            dadoi[is.na(dadoi)] <- 0
-                            if(length(input$mort_tipo_sexo) != 1){
-                            dadoi$Total <- apply(dadoi[,3:4],1,sum)
-                            dadoi$`%_Total` <- with(dadoi, round(Total*100/sum(Total),2)) 
-                            dadoi <- dplyr::arrange(dadoi, desc('Total'))}
-                            names(dadoi)[1:2] <- c('Capítulo', 'Descrição') 
-                            row.names(dadoi)  <- NULL
-                            dadoi 
-                               })
- 
-   mod_summary_card_server('mort_tabela_cap',
-                      tags$div(class = 'card',
-                    tags$div(class = 'card-header',
-                    h1('Capítulo CID10')),
-                    tags$div(class = 'card-body',
-                    #tableOutput('mort_tabelacid_out')
-                    reactableOutput('mort_tabelacap_out')
-                    ),
-                    tags$div(class = 'card-footer',
-                       tags$div(class = "ms-auto lh-1",
-                          downloadButton('download_hometabela_cap', 'Baixar')      )       
-                             )) #end divs     
-                    )  
-                    
-  output$mort_tabelacap_out <- renderReactable({  #DT::renderDataTable({#
-                           dadoi <- tabela_cap()
-                           reactable(dadoi)
-                           #kbl(dadoi) %>%
-                           #kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
-                           #scroll_box(width = "100%", height = "480px")
-                            }) 
- 
- output$download_hometabela_cid <- downloadHandler(
-    filename = function() {
-      paste("data-", Sys.Date(), ".csv", sep="")
-    },
-    content = function(file) {
-      write.csv(tabela_cap(), file)
-    }
-  )
