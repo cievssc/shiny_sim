@@ -6,6 +6,19 @@
  pops_2022$codigo <- with(pops_2022, paste0(cod_uf, cod_mun)) %>% as.numeric
  pops_2022 <- dplyr::left_join(pops_2022, tab_regioes[,c(1,3)], by = 'codigo')
  pops_2022$pop <- as.numeric(pops_2022$pop)
+
+ #add em 17-out-2023 (temporário)
+ #ajustes das populaçoes dos anos de 2022 à 2024
+ pops_temp <- lapply(2022:2024, function(x){
+               dadoi <- pop_all[which(pop_all$ano == 2021),]
+               dadoi$ano <- x
+               dadoi
+ }) %>% do.call('rbind',.)
+
+ pop_all <- dplyr::bind_rows(pop_all, pops_temp)
+ pop_all <- pop_all[,-2]
+ rm(pops_temp)
+
  #funão para obter coordenadas de endereço (sem utiliudade no momento)
  func_geo <- function(x, ...){
                      key  <-

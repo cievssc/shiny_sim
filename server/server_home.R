@@ -55,7 +55,7 @@
                  }else{
                   dias <- input$home_daterange
                  }
-                 if(input$head_municipio != 'Todos'){
+                 if(any(input$head_municipio != 'Todos')){
                                 lista_mun <- municipios_br[which(municipios_br$uf == 'Santa Catarina'),c(3,4)]
                                 lista_mun <- floor(municipios_br$codigo[municipios_br$municipio %in% input$head_municipio]/10)
                  query <- DBI::sqlInterpolate(conn(), 

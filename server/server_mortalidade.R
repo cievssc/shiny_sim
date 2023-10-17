@@ -33,7 +33,7 @@
                   anos <- c((as.numeric(format(Sys.Date(), '%Y'))-2):(as.numeric(format(Sys.Date(), '%Y'))))
                  }else{anos <- input$home_dateyear}
 
-                 if(input$head_municipio != 'Todos'){
+                 if(any(input$head_municipio != 'Todos')){
                                 lista_mun <- municipios_br[which(municipios_br$uf == 'Santa Catarina'),c(3,4)]
                                 lista_mun <- floor(municipios_br$codigo[municipios_br$municipio %in% input$head_municipio]/10)
                  query <- DBI::sqlInterpolate(conn(), 
@@ -128,12 +128,14 @@
   
   #população (add em 16-out-2023, 1525h)
 
-  observeEvent(list(input$head_atualizar, input$home_dateyear),{
+  observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{
       if(input$current_tab != 'mortalidade'){return()}
-      pops <- pop_all[pop_all$ano %in% as.numeric(input$home_dateyear),-2]
-      pops <- left_join(, tab_regioes[,c(3:5)], by = c('cod6'))
+      pops <- pop_all[pop_all$ano %in% as.numeric(input$home_dateyear),]
+      pops <- left_join(pops, tab_regioes[,c(3:5)], by = c('cod6'))
+      if(any(input$head_municipio != 'Todos')){
+      pops <- pops[which(pops$municipio %in% input$head_municipio),]}
       pops(pops)
-  }, ignoreInit = T)#ignoreNULL = F)
+  }, ignoreNULL = F)
   
   #------------------------------------------------------------------------
   #dados necessários (17-ou-2023, 1339h)
@@ -171,7 +173,7 @@
                     dadoi <- dadoi[which(dadoi$dcnt == T),]
                     pops <- aggregate(value ~ano, data = pops(), FUN = sum)
                     dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
+                    tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     )
                     })
   
@@ -187,7 +189,7 @@
                     dadoi <- dadoi[which(dadoi$suicidio == T),]
                     pops <- aggregate(value ~ano, data = pops(), FUN = sum)
                     dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
+                    tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
                     )
                     })
@@ -204,7 +206,7 @@
                     dadoi <- dadoi[!is.na(dadoi$tipo_transito),]
                     pops <- aggregate(value ~ano, data = pops(), FUN = sum)
                     dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
+                    tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
                     )
                     })
@@ -221,7 +223,7 @@
                     dadoi <- dadoi[which(dadoi$afogamento == T),]
                     pops <- aggregate(value ~ano, data = pops(), FUN = sum)
                     dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
-                    tagList(tags$div(class = 'text-center display-6 fw-bold my-3',dadoi)
+                    tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
                     )
                     }) 
@@ -240,11 +242,19 @@
         
   mort_leaflet_data <- reactive({
   
+  #dados_analise_mort
    dadoi <- dados_analise_mort()
-   dadoi <- lapply(split(dadoi$ano), function)
+   dadoi$total <-  1
+   dadoi <- aggregate(total ~ municipio, data = dadoi, FUN = sum)
    
-   mapa_dado <- as.data.frame(table(dadoi$reg_saude))     
-   mapa_dado <- left_join(mapa_regionais, mapa_dado, by = c('reg_saude' = 'Var1'))
+   #pop_all
+   pops <- pops()
+   pops <- aggregate(value ~ municipio, data = pops, FUN = sum)
+
+   dadoi <- left_join(dadoi, pops, by = 'municipio')
+   dadoi$mortalidade <- with(dadoi, round((total*1E5)/value,2))
+
+   mapa_dado <- left_join(municipiosf, dadoi, by = c('Municipio' = 'municipio'))
    
    fill_color <- function(x){
                    bins <- unique(as.vector(round(quantile(x, probs = c(0,0.30,0.50,0.7,0.85,0.95,0.98,1),na.rm = T))))
@@ -256,14 +266,14 @@
    labells <- function(x){
              mapa_dado <- x
      sprintf(
-  "<strong>%s</strong><br/> %s %s" , #  people / mi<sup>2</sup>",
- mapa_dado$reg_saude, 'Qtde óbitos: ', mapa_dado$Freq) %>% lapply(htmltools::HTML)
+  "<strong>%s</strong><br/> %s %s <br/> %s: %s" , #  people / mi<sup>2</sup>",
+ mapa_dado$Municipio, 'Qtde óbitos: ', mapa_dado$total, 'Tx. Mortalidade', mapa_dado$mortalidade) %>% lapply(htmltools::HTML)
          }
 
    leaflet() %>%
         addProviderTiles("OpenStreetMap.Mapnik") %>%
         setView(lat = -27.5, lng = -51, zoom = 7)  %>% clearControls() %>% clearShapes() %>%
-        addPolygons(data = mapa_dado,  color = "#444444", fillColor =  fill_color(mapa_dado$Freq)[[2]], 
+        addPolygons(data = mapa_dado,  color = "#444444", fillColor =  fill_color(mapa_dado$mortalidade)[[2]], 
         stroke = T, smoothFactor = 0.5, fillOpacity = 0.8, weight = 1.5,
     highlight = highlightOptions(
     weight = 5,
@@ -276,8 +286,123 @@
     textsize = "12px",
     maxWidth = '200px',
     direction = "auto")) %>% 
-    addLegend(pal = fill_color(mapa_dado$Freq)[[1]], values = fill_color(mapa_dado$Freq)[[2]], opacity = 0.7, title = 'Qtde. de Óbitos',
+    addLegend(pal = fill_color(mapa_dado$mortalidade)[[1]], values = fill_color(mapa_dado$mortalidade)[[2]], opacity = 0.7, title = 'Tx. Mortalidade',
   position = "bottomright", layerId="colorLegend2",className = 'info legenda')
                       
   }) #reactive                       
+
+
+ #============================================================================
+ #gráficos
+ #card serie óbitos
+   mod_summary_card_server('mort_serie', 
+                            tagList(
+                     div(class = 'card',
+                       div(class = 'card-header', style = 'display:flex;   justify-content:space-between;',
+                           h1(class = 'card-title', 'Série Tx. Mortalidade'), 
+                           
+                            div(class = 'body',
+                      apexchartOutput('long_mortserie_chart', height = '500px') %>% withSpinner(color="#0dc5c1")))
+                             ) #end taglist
+                            )) #end 
   
+  
+
+
+    output$long_mortserie_chart <- renderApex({
+                           dadoi <- dados_analise_mort()
+                           dadoi <- with(dadoi, as.data.frame(table(ano), stringsAsFactors = F))
+
+                           pops <- pops()
+                           pops <- aggregate(value ~ano, data = pops, FUN = sum)
+
+                           dadoi$mortalidade <- round(dadoi$Freq*1E5/pops$value, 2)
+                           
+                       list(series = list(list(name = 'Tx.Mortalidade',data = dadoi[,3])
+                                              ),
+                                              chart = list(type = 'bar', 
+                                                       toolbar = c(show = TRUE),
+                                                       height = '100%',
+                                                       stacked = TRUE),
+                                              dataLabels = list(enabled = FALSE),
+                                              xaxis = list(
+                                                      categories = dadoi$ano
+                                                      ),
+                                            
+                                              plotOptions = list(
+                                                        bar = list(
+                                                          horizontal = FALSE,
+                                                          dataLabels = list(
+                                                             total = list(
+                                                                enabled = F,
+                                                                style = list(
+                                                                    fontSize = '13px',
+                                                                    fontWeight = 900)
+                                                                )
+                                                             )
+                                                          )
+                                                          ),
+                                              legend = c(show = TRUE)
+                                              )
+                                     })  #end renderapex                       
+                        
+ 
+ #sexo ----------------------------
+ mod_summary_card_server('mort_sexo', 
+                   tagList(
+                     div(class = 'card',
+                       div(class = 'card-header',
+                           h1(class = 'card-title', 'Sexo')),
+                            div(class = 'body',
+                      apexchartOutput('mort_sexo_chart', height = '250px')))
+                             ) #end taglist
+                             )
+ 
+ output$mort_sexo_chart <- renderApex({
+                           dadoi  <- dados_analise_mort()
+                           dadoi <- dadoi[which(dadoi$dsc_sexo != 'Ignorado'),]
+                           dadoi$dsc_sexo <- factor(dadoi$dsc_sexo, levels = c('Masculino','Feminino'))
+                           dadoi$total <- 1
+                           dadoi <- aggregate(total ~ ano + dsc_sexo, data = dadoi, FUN = sum) 
+                           #dadoi <- tidyr::spread(dadoi, key = dsc_sexo, value = total)
+
+                           pops <- pops()
+                           pops <- aggregate(value ~ ano + sexo, data = pops, FUN = sum)
+
+                           dadoi <- left_join(dadoi, pops, by = c('ano', 'dsc_sexo' = 'sexo'))
+                           dadoi$mortalidade <- with(dadoi, round((total*1E5)/value,2))
+
+                           dadoi <- tidyr::spread(dadoi[,c(1,2,5)], key = dsc_sexo, value = mortalidade)
+
+                           if(ncol(dadoi) == 2){lista <- list(list(name = input$home_tipo_sexo[1], data = dadoi[,2]))}else{
+                           lista <- list(list(name = 'Masculino',data = dadoi[,3]),
+                                              list(name = 'Feminino',data = dadoi[,2]))}
+
+                          list(series = lista,
+                                              chart = list(type = 'bar', 
+                                                       toolbar = c(show = TRUE),
+                                                       height = '100%',
+                                                       stacked = FALSE),
+                                              dataLabels = list(enabled = FALSE),
+                                              xaxis = list(
+                                                      categories = dadoi$ano
+                                                      ),
+                                            
+                                              plotOptions = list(
+                                                        bar = list(
+                                                          horizontal = FALSE,
+                                                          dataLabels = list(
+                                                             total = list(
+                                                                enabled = F,
+                                                                style = list(
+                                                                    fontSize = '13px',
+                                                                    fontWeight = 900)
+                                                                )
+                                                             )
+                                                          )
+                                                          ),
+                                              legend = c(show = TRUE)
+                                              )
+                             
+                                     })  #end renderapex 
+                              

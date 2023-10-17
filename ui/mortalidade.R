@@ -8,7 +8,7 @@
                                 uiOutput('mort_dropopcoes'), left = T))),
        tags$div(class = 'page-body',
                   verbatimTextOutput('testei'),
-                
+         tags$div(class = 'container-xl',        
         fluidRow(class = 'row row-deck row-cards',
              #column(4,
               # fluidRow(class = 'row row-deck row-cards',
@@ -30,7 +30,7 @@
                   mod_summary_card_ui('mort_tabela_cap', div_class = "col-md-12")
                    
                   )#end row
-       
+         ) #end container-xl
        #verbatimTextOutput('visual')
        ) #end div page-body
        ) #end tabler_tab_item
