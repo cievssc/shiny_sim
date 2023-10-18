@@ -27,7 +27,7 @@
   #output$testei <- renderPrint({ head(dados_analise_mort())})
 
   observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{ #teste(),{ #
-                 #if(input$current_tab != 'mortalidade'){return()}
+                 if(input$current_tab != 'mortalidade'){return()}
                  # req(input$home_dateyear)
                  if(is.null(input$home_dateyear)){
                   anos <- c((as.numeric(format(Sys.Date(), '%Y'))-2):(as.numeric(format(Sys.Date(), '%Y'))))
@@ -81,6 +81,7 @@
   observeEvent(c( input$head_atualizar),{# input$mort_atualizar,
                      req(!is.null(dados_all_mort()))
                      dadoi <- dados_all_mort()
+                     pops <- pops()
                      if(input$mort_dropdown >0){
                      if(input$mort_tipo_obito %in% c('Diabetes mellitus', 'Doenças cardiovasculares',
                                       'Doenças respiratórias','Neoplasias')){
@@ -100,9 +101,11 @@
                         }      
                      if((input$mort_tipo_sexo == 'Masculino') & length(input$mort_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'M',]
+                        pops <- pops[pops$sexo == 'Masculino',]
                         }
                      if((input$mort_tipo_sexo == 'Feminino')  & length(input$mort_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'F',]
+                        pops <- pops[pops$sexo == 'Feminino',]
                         }
                      if(!is.null(input$mort_tipo_idade)){
                         sequencia <- seq(input$mort_tipo_idade[1],input$mort_tipo_idade[2], by = 1)
@@ -123,6 +126,7 @@
                    }else{
 
                    dados_analise_mort(dadoi)
+                   pops(pops)
                    }     
                           })
   
@@ -130,7 +134,10 @@
 
   observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{
       if(input$current_tab != 'mortalidade'){return()}
-      pops <- pop_all[pop_all$ano %in% as.numeric(input$home_dateyear),]
+      if(is.null(input$home_dateyear)){
+                  anos <- c((as.numeric(format(Sys.Date(), '%Y'))-2):(as.numeric(format(Sys.Date(), '%Y'))))
+                 }else{anos <- input$home_dateyear}
+      pops <- pop_all[pop_all$ano %in% anos,]
       pops <- left_join(pops, tab_regioes[,c(3:5)], by = c('cod6'))
       if(any(input$head_municipio != 'Todos')){
       pops <- pops[which(pops$municipio %in% input$head_municipio),]}
@@ -154,7 +161,7 @@
   
   output$mort_total_card <- renderUI({
                     dadoi <- dados_analise_mort()
-                    pops <- aggregate(value ~ano, data = pops(), FUN = sum)
+                    pops <- pops()#aggregate(value ~ano, data = pops(), FUN = sum)
                     dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
                     tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     )
@@ -171,8 +178,8 @@
   output$mort_totalcard_dcnt <- renderUI({
                     dadoi <- dados_analise_mort()
                     dadoi <- dadoi[which(dadoi$dcnt == T),]
-                    pops <- aggregate(value ~ano, data = pops(), FUN = sum)
-                    dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
+                    pops <- pops()#aggregate(value ~ano, data = pops(), FUN = sum)
+                    dadoi <- round((nrow(dadoi)/sum(pops$value))*1E5,2)
                     tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     )
                     })
@@ -187,8 +194,8 @@
   output$mort_totalcard_suic <- renderUI({
                     dadoi <- dados_analise_mort()
                     dadoi <- dadoi[which(dadoi$suicidio == T),]
-                    pops <- aggregate(value ~ano, data = pops(), FUN = sum)
-                    dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
+                    pops <- pops()#aggregate(value ~ano, data = pops(), FUN = sum)
+                    dadoi <- round((nrow(dadoi)/sum(pops$value))*1E5,2)
                     tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
                     )
@@ -204,8 +211,8 @@
   output$mort_totalcard_acid <- renderUI({
                     dadoi <- dados_analise_mort()
                     dadoi <- dadoi[!is.na(dadoi$tipo_transito),]
-                    pops <- aggregate(value ~ano, data = pops(), FUN = sum)
-                    dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
+                    pops <- pops()#aggregate(value ~ano, data = pops(), FUN = sum)
+                    dadoi <- round((nrow(dadoi)/sum(pops$value))*1E5,2)
                     tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
                     )
@@ -221,8 +228,8 @@
   output$mort_totalcard_afog <- renderUI({
                     dadoi <- dados_analise_mort()
                     dadoi <- dadoi[which(dadoi$afogamento == T),]
-                    pops <- aggregate(value ~ano, data = pops(), FUN = sum)
-                    dadoi <- round((sum(table(dadoi$ano))/sum(pops$value))*1E5,2)
+                    pops <- pops()#aggregate(value ~ano, data = pops(), FUN = sum)
+                    dadoi <- round((nrow(dadoi)/sum(pops$value))*1E5,2)
                     tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi)
                     #tagList(tags$div(class = 'text-center display-5 fw-bold my-3',dadoi[which.max(dadoi[,2]),1])
                     )
@@ -245,16 +252,16 @@
   #dados_analise_mort
    dadoi <- dados_analise_mort()
    dadoi$total <-  1
-   dadoi <- aggregate(total ~ municipio, data = dadoi, FUN = sum)
+   dadoi <- aggregate(total ~ cod_municipio_ibge_residencia, data = dadoi, FUN = sum)
    
    #pop_all
    pops <- pops()
-   pops <- aggregate(value ~ municipio, data = pops, FUN = sum)
+   pops <- aggregate(value ~ cod6, data = pops, FUN = sum)
 
-   dadoi <- left_join(dadoi, pops, by = 'municipio')
+   dadoi <- left_join(dadoi, pops, by = c('cod_municipio_ibge_residencia' = 'cod6'))
    dadoi$mortalidade <- with(dadoi, round((total*1E5)/value,2))
 
-   mapa_dado <- left_join(municipiosf, dadoi, by = c('Municipio' = 'municipio'))
+   mapa_dado <- left_join(municipiosf, dadoi, by = c('cod6' = 'cod_municipio_ibge_residencia'))
    
    fill_color <- function(x){
                    bins <- unique(as.vector(round(quantile(x, probs = c(0,0.30,0.50,0.7,0.85,0.95,0.98,1),na.rm = T))))
@@ -299,11 +306,11 @@
                             tagList(
                      div(class = 'card',
                        div(class = 'card-header', style = 'display:flex;   justify-content:space-between;',
-                           h1(class = 'card-title', 'Série Tx. Mortalidade'), 
+                           h1(class = 'card-title', 'Série Tx. Mortalidade')), 
                            
                             div(class = 'body',
-                      apexchartOutput('long_mortserie_chart', height = '500px') %>% withSpinner(color="#0dc5c1")))
-                             ) #end taglist
+                      apexchartOutput('long_mortserie_chart', height = '500px') %>% withSpinner(color="#0dc5c1"))
+                             ) #end card
                             )) #end 
   
   
@@ -405,4 +412,163 @@
                                               )
                              
                                      })  #end renderapex 
+
+   #pirâmide etária
+ mod_summary_card_server('mort_idade', 
+                   tagList(
+                     div(class = 'card',
+                       div(class = 'card-header',
+                           h1(class = 'card-title', 'Idade')),
+                            div(class = 'body',
+                      apexchartbarOutput('mort_idadesexo_chart', height = '250px')))
+                             ) #end taglist
+                             )
+ 
+ output$mort_idadesexo_chart <- renderApex({
+                          dadoi <- dados_analise_mort()
+                          pops <- pops()
+
+                          dadoi <- dadoi[which(dadoi$dsc_sexo != 'Ignorado'),]
+                           dadoi$dsc_sexo <- factor(dadoi$dsc_sexo, levels = c('Masculino','Feminino'))
+                          dadoi$faixa_idade <- cut(dadoi$num_idade, breaks = c(-Inf,5,10,15,20,30,40,50,60,70,80, Inf), right = F, include.lowest = T,
+                                                labels = levels(pops$variable))
+                          
+                          dadoi$total <- 1
+                          dadoi <- aggregate(total ~  faixa_idade + dsc_sexo, data = dadoi, FUN = sum)#with(dadoi,as.data.frame(table(faixa_idade, dsc_sexo)))
+                          pops <- aggregate(value ~ variable + sexo, data = pops, FUN = sum)
+
+                          dadoi <- left_join(dadoi, pops, by = c('faixa_idade' = 'variable','dsc_sexo' = 'sexo'))
+                          dadoi$mortalidade <- with(dadoi, round((total*1E5)/value,2))
+
+
+                           dadoi <- tidyr::spread(dadoi[,c(1,2,5)], value = mortalidade, key = dsc_sexo)
+                           if(ncol(dadoi) == 2){lista <- list(list(name = input$mort_tipo_sexo[1], data = dadoi[,2]))}else{
+                           lista <- list(list(name = 'Homem',data = dadoi[,'Masculino']*(-1)),
+                                          list(name = 'Mulher',data = dadoi[,'Feminino']))}
+                                          
+                           list(series = lista,
+                                              chart = list(type = 'bar', 
+                                                       #toolbar = c(show = FALSE),
+                                                       height = '100%',
+                                                       stacked = T),
+                                              #colors = c('#008FFB', '#FF4560'),
+                                              dataLabels = c(enabled = FALSE),
+                                              plotOptions = list(bar = list(horizontal = T,
+                                                                       barheight = '80%')),
+                                              xaxis = list(#labels = c(show = FALSE),
+                                                      categories =dadoi[,1]
+                                                      ),
+                                              
+                                              grid = list(
+                                                          xaxis = list(lines = c(show = FALSE))),
+                                              legend = c(show = T)
+                                              )
+                                     })  #end renderapex
+
+
+#==================================================
+  #tabelas
+  #região saúde
+  tabela_mortreg_saude <- reactive({
+                            dadoi <- dados_analise_mort()
+                            dadoi <- with(dadoi,as.data.frame(table(reg_saude), stringsAsFactors = F))#)
+                           
+                            pops <- pops()
+                            #pops <- left_join(pops, tab_regioes[,c(3,4)], by = 'cod6')
+                            pops <- aggregate(value ~reg_saude, data = pops, FUN = sum)
+                            
+
+                            dadoi <- left_join(dadoi, pops, by = 'reg_saude')
+                            dadoi$Perc_registros <- with(dadoi, round(Freq*100/sum(Freq),2))
+                            dadoi$Tx_mortalidade <- with(dadoi, round((Freq*1E5)/value,2))
+                            dadoi <- dadoi[,-3]
+                            names(dadoi)[1:2] <- c('Região', 'Registros')
+                            dadoi <- dplyr::arrange(dadoi, desc('Tx_mortalidade')) 
+                            row.names(dadoi)  <- NULL
+                            dadoi 
+                               })
+ 
+   mod_summary_card_server('mort_tabela_reg',
+                      tags$div(class = 'card',
+                    tags$div(class = 'card-header',
+                    h1('Região Saúde')),
+                    tags$div(class = 'card-body',
+                    #tableOutput('mort_tabelaregsaude_out')
+                    reactableOutput('mort_tabelaregsaude_out')
+                    ),
+                    tags$div(class = 'card-footer',
+                       tags$div(class = "ms-auto lh-1",
+                          downloadButton('download_morttabela_reg', 'Baixar')      )       
+                             )) #end divs     
+                    )  
+                    
+  output$mort_tabelaregsaude_out <- renderReactable({  #DT::renderDataTable({#
+                           dadoi <- tabela_mortreg_saude()
+                           dadoi <- dplyr::arrange(dadoi, desc(Registros))   
+                           reactable(dadoi)
+                           #kbl(dadoi) %>%
+                           #kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+                           #scroll_box(width = "100%", height = "480px")
+                            }) 
+ 
+ output$download_morttabela_reg <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(tabela_mortreg_saude(), file)
+    }
+  )
+
+
+#capítulo cid
+  mort_tabela_cap <- reactive({
+                           pops <- pops()
+                           
+                           
+                            dadoi <- dados_analise_mort()
+                            dadoi$CAT <- substr(dadoi$cod_cid_causa_basica,1,3)
+                            dadoi <- left_join(dadoi[which(dadoi$dsc_sexo != 'Ignorado'),], cid10, by = 'CAT')
+                            dadoi$ones <- 1
+                            dadoi <- aggregate(ones ~ cap_romano + descricao_cap, data = dadoi, FUN = sum)                            
+                            dadoi[is.na(dadoi)] <- 0
+                            dadoi$Tx_mortalidade <- with(dadoi, round((ones*1E5)/sum(pops$value),2))
+                            
+                            names(dadoi)[1:3] <- c('Capítulo', 'Descrição', 'Registros') 
+                            row.names(dadoi)  <- NULL
+                            dadoi 
+                               })
+ 
+   mod_summary_card_server('mort_tabela_cap',
+                      tags$div(class = 'card',
+                    tags$div(class = 'card-header',
+                    h1('Capítulo CID10')),
+                    tags$div(class = 'card-body',
+                    #tableOutput('mort_tabelacid_out')
+                    reactableOutput('mort_tabelacap_out')
+                    ),
+                    tags$div(class = 'card-footer',
+                       tags$div(class = "ms-auto lh-1",
+                          downloadButton('download_mort_tabela_cap', 'Baixar')      )       
+                             )) #end divs     
+                    )  
+                    
+  output$mort_tabelacap_out <- renderReactable({  #DT::renderDataTable({#
+                           dadoi <- mort_tabela_cap()
+                           reactable(dadoi)
+                           #kbl(dadoi) %>%
+                           #kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive")) %>%
+                           #scroll_box(width = "100%", height = "480px")
+                            }) 
+ 
+ output$download_mort_tabela_cid <- downloadHandler(
+    filename = function() {
+      paste("data-", Sys.Date(), ".csv", sep="")
+    },
+    content = function(file) {
+      write.csv(mort_tabela_cap(), file)
+    }
+  )
+  
+
                               
