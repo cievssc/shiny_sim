@@ -386,6 +386,7 @@
 
                            list(series = c(dadoi[,2]),
                             chart = list(type = 'donut',
+                                         toolbar = c(show = TRUE),
                                          height = '100%'),
                             labels = dadoi[,1],
                             legend = list(position = 'bottom'))

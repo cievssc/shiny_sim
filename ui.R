@@ -27,13 +27,13 @@
      
        #id =  "current_tab",
        tabler_navbar_menu_item(
-         text = "Informações gerais",
+         text = "Frequência Óbitos",
          icon = icon_home(),
          tabName = "home",
          selected = TRUE
        ),
        tabler_navbar_menu_item(
-         text = "Mortalidade",
+         text = "Tx. Mortalidade",
          icon = icon_calc(),
          tabName = "mortalidade"#,
          #selected = FALSE

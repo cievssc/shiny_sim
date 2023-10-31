@@ -77,12 +77,12 @@
         }
  
  #conn <- function(){DBI::dbConnect(odbc::odbc(),
- #                     driver = '/opt/cloudera/impalaodbc/lib/64/libclouderaimpalaodbc64.so',
-  #                    SSL=1,AuthMech=3,
-  #                    host = 'boavista-dados.ciasc.sc.gov.br',
-   #                   port = 21050,
-    #                  uid = vetor_a,
-     #                 pwd = vetor_b,
+ #              driver = '/opt/cloudera/impalaodbc/lib/64/libclouderaimpalaodbc64.so',
+ #              SSL=1,AuthMech=3,
+ #              host = Sys.getenv('BD_HOST'),
+ #              port = 21050,
+ #              uid = Sys.getenv('BD_USER'),
+ #              pwd = Sys.getenv('BD_PASS'),
       #                schema = 'ses')}
  
  
