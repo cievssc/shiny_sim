@@ -7,7 +7,6 @@
                           shinyWidgets::dropdown(style = "unite", icon = icon("gear"),  inputId = 'mort_dropdown',
                                 uiOutput('mort_dropopcoes'), left = T))),
        tags$div(class = 'page-body',
-                  verbatimTextOutput('testei'),
          tags$div(class = 'container-xl',        
         fluidRow(class = 'row row-deck row-cards',
              #column(4,

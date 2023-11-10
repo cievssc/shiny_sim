@@ -9,10 +9,8 @@
                                   selectInput('mort_tipo_sexo', label = h5('Sexo'),
                                       choices = c('Masculino', 'Feminino'), selected = c('Masculino', 'Feminino'),
                                       multiple = T),     
-                                  sliderInput('mort_tipo_idade', label = 'Idade:', 
-                                  min = 0, max = 150, value = c(0,150))
-                                 #  br(),     
-                                # actionButton('mort_atualizar', 'Atualizar') 
+                                  selectInput('mort_tipo_idade', label = 'Idade:',
+                                  choices = levels(pop_all$variable), selected = levels(pop_all$variable), multiple = T)
                                        )      
                                      )
 
@@ -24,8 +22,7 @@
   
   #TODO melhorar a reatividade do dados_all_mort() - 17-*out-2023
   #teste <- reactive({list(input$current_tab == 'mortalidade', input$head_atualizar)})
-  #output$testei <- renderPrint({ head(dados_analise_mort())})
-
+  
   observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{ #teste(),{ #
                  if(input$current_tab != 'mortalidade'){return()}
                  # req(input$home_dateyear)
@@ -73,13 +70,17 @@
                    dadoi <- left_join(dadoi, tab_regioes[,c(3:5)], by = c('cod_municipio_ibge_residencia' = 'cod6'))
                    #add em 17-out-23
                    dadoi$ano <- with(dadoi, substr(dat_obito,1,4)) %>% as.numeric
+                   dadoi$faixa_idade <- cut(dadoi$num_idade, breaks = c(-Inf,5,10,15,20,30,40,50,60,70,80, Inf), right = F, include.lowest = T,
+                                                labels = levels(pop_all$variable))
                    dados_all_mort(dadoi)}
                    #dadoi}
                    }, ignoreNULL = F) #end observeEvent ignoreNULL = F
   
+  output$testei <- renderPrint({(input$mort_tipo_sexo == 'Feminino')  & length(input$mort_tipo_sexo) == 1})
 
   observeEvent(c( input$head_atualizar),{# input$mort_atualizar,
                      req(!is.null(dados_all_mort()))
+                     #if(input$current_tab != 'mortalidade'){return()}
                      dadoi <- dados_all_mort()
                      pops <- pops()
                      if(input$mort_dropdown >0){
@@ -108,8 +109,8 @@
                         pops <- pops[pops$sexo == 'Feminino',]
                         }
                      if(!is.null(input$mort_tipo_idade)){
-                        sequencia <- seq(input$mort_tipo_idade[1],input$mort_tipo_idade[2], by = 1)
-                        dadoi <- dadoi[as.numeric(dadoi$num_idade) %in% sequencia, ] 
+                        dadoi <- dadoi[dadoi$faixa_idade %in% input$mort_tipo_idade, ]
+                        pops <- pops[pops$variable %in% input$mort_tipo_idade, ]
                         }      
                         }
                    

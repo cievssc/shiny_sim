@@ -11,21 +11,19 @@
                        multiple = T, selected = 'Todos')
                        ), #end dib
                   tags$div(class = "nav-item d-none d-md-flex me-3",
-                     uiOutput('home_dateinput')
-                      #códigtos em server_home
-                     
-                       ), #end dib      
+                     uiOutput('home_dateinput') #códigtos em server_home
+                      ), #end dib      
                       tags$div(class = "nav-item d-none d-md-flex me-3",
                       actionButton("head_atualizar", label = "Atualizar")
                           ) #end div
-                          )), #endheader
+                          )
+       
+                          ), #endheader
    tabler_navbar(
      #brand_url = "https://preview-dev.tabler.io",
      #brand_image = "https://preview-dev.tabler.io/static/logo.svg",
      nav_menu = tabler_navbar_menu(
       inputId = 'current_tab',
-     
-       #id =  "current_tab",
        tabler_navbar_menu_item(
          text = "Frequência Óbitos",
          icon = icon_home(),
@@ -42,6 +40,7 @@
      #tags$button("update", "Change tab", icon = icon("exchange-alt"))
    ),
    tabler_body(classe = 'page-wrapper',
+   verbatimTextOutput('testei'),
      tabler_tab_items(
                       
       source('./ui/home.R',  local = T, encoding = 'UTF-8')$value,
