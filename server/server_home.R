@@ -119,10 +119,10 @@
                      if(input$home_tipo_obito == 'Afogamento'){
                         dadoi <- dadoi[dadoi$afogamento == T,]
                         }      
-                     if((input$home_tipo_sexo == 'Masculino') & length(input$home_tipo_sexo) == 1){
+                     if((input$home_tipo_sexo[1] == 'Masculino') & length(input$home_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'M',]
                         }
-                     if((input$home_tipo_sexo == 'Feminino')  & length(input$home_tipo_sexo) == 1){
+                     if((input$home_tipo_sexo[1] == 'Feminino')  & length(input$home_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'F',]
                         }
                      if(!is.null(input$home_tipo_idade)){

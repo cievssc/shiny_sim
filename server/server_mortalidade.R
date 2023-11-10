@@ -20,9 +20,9 @@
   dados_analise_mort <- reactiveVal(NULL)
   pops <- reactiveVal()
   
-  #TODO melhorar a reatividade do dados_all_mort() - 17-*out-2023
   #teste <- reactive({list(input$current_tab == 'mortalidade', input$head_atualizar)})
-  
+  #output$testei <- renderPrint({head(dados_analise_mort())})
+
   observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{ #teste(),{ #
                  if(input$current_tab != 'mortalidade'){return()}
                  # req(input$home_dateyear)
@@ -76,11 +76,10 @@
                    #dadoi}
                    }, ignoreNULL = F) #end observeEvent ignoreNULL = F
   
-  output$testei <- renderPrint({(input$mort_tipo_sexo == 'Feminino')  & length(input$mort_tipo_sexo) == 1})
 
-  observeEvent(c( input$head_atualizar),{# input$mort_atualizar,
+  observeEvent({input$current_tab =='mortalidade' |  input$head_atualizar},{# input$mort_atualizar,
                      req(!is.null(dados_all_mort()))
-                     #if(input$current_tab != 'mortalidade'){return()}
+                     if(input$current_tab != 'mortalidade'){return()}
                      dadoi <- dados_all_mort()
                      pops <- pops()
                      if(input$mort_dropdown >0){
@@ -100,11 +99,11 @@
                      if(input$mort_tipo_obito == 'Afogamento'){
                         dadoi <- dadoi[dadoi$afogamento == T,]
                         }      
-                     if((input$mort_tipo_sexo == 'Masculino') & length(input$mort_tipo_sexo) == 1){
+                     if((input$mort_tipo_sexo[1] == 'Masculino') & length(input$mort_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'M',]
                         pops <- pops[pops$sexo == 'Masculino',]
                         }
-                     if((input$mort_tipo_sexo == 'Feminino')  & length(input$mort_tipo_sexo) == 1){
+                     if((input$mort_tipo_sexo[1] == 'Feminino')  & length(input$mort_tipo_sexo) == 1){
                         dadoi <- dadoi[dadoi$sgl_sexo == 'F',]
                         pops <- pops[pops$sexo == 'Feminino',]
                         }

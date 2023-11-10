@@ -40,7 +40,7 @@
      #tags$button("update", "Change tab", icon = icon("exchange-alt"))
    ),
    tabler_body(classe = 'page-wrapper',
-   verbatimTextOutput('testei'),
+   #verbatimTextOutput('testei'),
      tabler_tab_items(
                       
       source('./ui/home.R',  local = T, encoding = 'UTF-8')$value,
